@@ -1,0 +1,8 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "models/tablet_mdf/tablet_body"
+	"$bumpmap" "models\n"        
+	"$nodecal" "1"
+	"$model" "1"
+}
+
