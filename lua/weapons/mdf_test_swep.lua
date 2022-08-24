@@ -6,7 +6,7 @@ SWEP["Category"]  = "MDF"
 SWEP["Spawnable"]	= true
 SWEP["UseHands"]	= true
 
-SWEP["HoldType"]	= "normal"
+SWEP["HoldType"]	= "slam"
 
 SWEP["WorldModel"] = ""
 SWEP["ViewModel"]  = "models/weapons/c_tablet_hand.mdl"
@@ -36,31 +36,51 @@ function SWEP:Initialize()
     self:SetWeaponHoldType(self["HoldType"])
     if CLIENT then
         self.RenderTargetName = self:GetPrintName().."_RT"
-        self.ScreenRenderTarget = GetRenderTarget( self.RenderTargetName, 1024, 1024 )
+        self.ScreenRenderTarget = GetRenderTarget( self.RenderTargetName, 2048, 2048 )
         self.ScreenMaterial = CreateMaterial( self.RenderTargetName , "VertexLitGeneric", {
             ["$basetexture"] = self.ScreenRenderTarget:GetName(),
             ["$model"] = 1,
-            ["$translucent"] = 1,
-            ["$vertexalpha"] = 1,
-            ["$vertexcolor"] = 1
+            ["$selfillum"] = 1
         } )
-
         self.createdmaterial = true
 
-        self:SetSubMaterial( 1, "!" .. self.RenderTargetName )
+        self:GetOwner():GetViewModel():SetSubMaterial( 1, "!" .. self.RenderTargetName )
 
     end
 end
 
 if CLIENT then
 
+
+    if IsValid( TEST_PNL ) then
+        TEST_PNL:Remove()
+    end
+
+    TEST_PNL = vgui.Create("DPanel")
+    TEST_PNL:SetPaintedManually( true )
+    TEST_PNL:SetSize( ScrW(), ScrH() )
+    TEST_PNL:Center()
+
     function SWEP:UpdateScreen()
         render.PushRenderTarget( self.ScreenRenderTarget)
-            cam.Start2D()
-                surface.SetDrawColor( Color(0,255,0,255) )
-                surface.DrawRect( 0, 0, 1024, 1024 )
+            -- cam.Start3D2D()
+            --     TEST_PNL:PaintManual()
+            -- cam.End3D2D()
 
+            cam.Start2D()
+                    surface.SetDrawColor( Color(0,0,0,255) )
+                    surface.DrawRect( 0, 0, 2048, 2048 )
+                   -- surface.DrawCircle(512,312,20,0,255,255,255)
+                    if IsValid(soundalz) then
+                        surface.SetDrawColor( Color(75,0,0,255) )
+                    surface.DrawRect( 0, 0, 1024, 1024 )
+                        local eng = soundalz:GetSoundPower()*2 or 1
+                        for i = 1 , 360 do
+                            surface.DrawCircle(1024+math.sin(CurTime()+i)*eng,1024+math.cos(CurTime()+i)*eng,10,0,255,255,255)
+                        end
+                    end
             cam.End2D()
+
         render.PopRenderTarget()
 
         self.ScreenMaterial:Recompute()
@@ -70,6 +90,23 @@ if CLIENT then
         if self.createdmaterial then
             self:UpdateScreen()
         end
+    end
+
+    function SWEP:DrawHUD()
+        local vm = self:GetOwner():GetViewModel()
+        local obj1 = vm:GetAttachment(vm:LookupAttachment( "left_up" ))
+        local obj2 = vm:GetAttachment(vm:LookupAttachment( "right_up" ))
+        local obj3 = vm:GetAttachment(vm:LookupAttachment( "left_down" ))
+        local obj4 = vm:GetAttachment(vm:LookupAttachment( "right_down" ))
+        local pos1 = obj1.Pos:ToScreen()
+        local pos2 = obj2.Pos:ToScreen()
+        local pos3 = obj3.Pos:ToScreen()
+        local pos4 = obj4.Pos:ToScreen()
+        surface.SetDrawColor( Color(255,0,0,255) )
+        surface.DrawLine(pos1.x,pos1.y,pos2.x,pos2.y)
+        surface.DrawLine(pos1.x,pos1.y,pos3.x,pos3.y)
+        surface.DrawLine(pos4.x,pos4.y,pos2.x,pos2.y)
+        surface.DrawLine(pos4.x,pos4.y,pos3.x,pos3.y)
     end
 end
 
