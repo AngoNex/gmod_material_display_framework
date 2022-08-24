@@ -60,6 +60,11 @@ if CLIENT then
     TEST_PNL:SetPaintedManually( true )
     TEST_PNL:SetSize( ScrW(), ScrH() )
     TEST_PNL:Center()
+    local eng = 0
+    local neweng = 0
+    soundalz:BeatEvent( SND_SA_BASS, function()
+        neweng = 200
+    end)
 
     function SWEP:UpdateScreen()
         render.PushRenderTarget( self.ScreenRenderTarget)
@@ -72,11 +77,14 @@ if CLIENT then
                     surface.DrawRect( 0, 0, 2048, 2048 )
                    -- surface.DrawCircle(512,312,20,0,255,255,255)
                     if IsValid(soundalz) then
-                        surface.SetDrawColor( Color(75,0,0,255) )
-                    surface.DrawRect( 0, 0, 1024, 1024 )
-                        local eng = soundalz:GetSoundPower()*2 or 1
-                        for i = 1 , 360 do
-                            surface.DrawCircle(1024+math.sin(CurTime()+i)*eng,1024+math.cos(CurTime()+i)*eng,10,0,255,255,255)
+                        eng = eng + (neweng - eng)/11.11111
+                        neweng = 80
+                        -- for i = 1 , 360 do
+                        --     surface.DrawCircle(1024+math.sin(CurTime()+i)*eng,1024+math.cos(CurTime()+i)*eng,30,0,255,255,255)
+                        -- end
+                        for i = 1, 205 do
+                            surface.SetDrawColor( color_white )
+                            surface.DrawRect((i-1)*10, 315, 10, 1 + soundalz["FFT"][i]*2500  )
                         end
                     end
             cam.End2D()
