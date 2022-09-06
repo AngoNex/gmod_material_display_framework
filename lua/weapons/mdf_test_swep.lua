@@ -554,7 +554,9 @@ if CLIENT then
     end
 
     function SWEP:Reload()
-        self:Initialize()
+        if IsFirstTimePredicted() then
+            self:Initialize()
+        end
     end
 
     function SWEP:Think()

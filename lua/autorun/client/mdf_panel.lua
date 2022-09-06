@@ -8,6 +8,13 @@ local colors = {
     black = Color(0,0,0,255),
 }
 
+local rendertypes = {
+    "box",
+    "roundbox",
+    "circle",
+    "custom"
+}
+
 local mdf_panel = {}
 mdf_panel.__index = mdf_panel
 
@@ -16,6 +23,7 @@ AccessorFunc( mdf_panel, "pos", "Pos", FORCE_VECTOR )
 AccessorFunc( mdf_panel, "wide", "Wide", FORCE_NUMBER )
 AccessorFunc( mdf_panel, "height", "Height", FORCE_NUMBER )
 AccessorFunc( mdf_panel, "selectable", "Selectable", FORCE_BOOL )
+AccessorFunc( mdf_panel, "hovered", "Hovered", FORCE_BOOL )
 AccessorFunc( mdf_panel, "text", "Text", FORCE_STRING )
 
 
@@ -25,36 +33,40 @@ function MDF_CreatePanel( screen )
     mt:SetTranslation( Vector( 0, 0, 0 ) )
     mt:SetScale( Vector( 1, 1, 1 ) )
     local meta = setmetatable({
-        x = 0,
-        y = 0,
+        screen = screen,
+        pos = Vector(),
         wide = 0,
         height = 0,
         theme = {
-            render = "box",
+            render = {"box"},
             color1 = colors.black,
             color2 = colors.dark_grey,
             color3 = colors.grey,
             color_text = colors.color_white,
             color_text_shadow = colors.light_grey
         },
-        isbutton = false,
         matrix = mt,
-        realpos = Vector(0,0),
-        parent = nil
+        parent = nil,
+        childs = {}
 
     },mdf_panel)
     meta:Init()
+    meta:PerformLayout()
     return meta
 end
 
 do
 
     function mdf_panel:Init()
-
+        
     end
 
-    function mdf_panel:IsButton()
-        return isbutton
+    function mdf_panel:PerformLayout()
+        self:SetWide(self:GetSize().x)
+        self:SetHeight(self:GetSize().y)
+        for num, child in ipairs(childs) do
+            child:PerformLayout()
+        end
     end
 
     function mdf_panel:GetParent()
@@ -66,32 +78,32 @@ do
     end
 
     function mdf_panel:Draw( w, h )
-        if self.theme.render == "box" then
-            draw.RoundedBox(0,0,0,w,h,self.theme.color1)
+
+    end
+
+    function mdf_panel:__RenderChild()
+        for num, child in ipairs(childs) do
+            child:__Render()
         end
     end
 
-    function mdf_panel:Render()
+    function mdf_panel:__Render()
         cam.PushModelMatrix( self.matrix )
-            self:Draw( )
+            self:Draw(self:GetWide(), self:GetHeight())
+            --тут может быть условие стенсила
+            self:__RenderChild()
         cam.PopModelMatrix()
     end
 
     function mdf_panel:Update()
-        self.realpos = self.
-        self:SetWide(self:GetSize().x)
-        self:SetHeight(self:GetSize().y)
-        self.matrix:SetTranslation( Vector( realpos.x, realpos.y, 0 ) )
-        self.matrix:SetScale( Vector( self:GetWide(), self:GetHeight()), 1 )
     end
+
+
+    function mdf_panel:OnClick()
+
+    end
+    
+
 
 end
 
-
--- RecentReleasesNCS(1,function(tbl)
---     PrintTable(tbl)
--- end)
-
--- findInNCS("Unknown Brain", function(tbl)
---     PrintTable( tbl )
--- end)
