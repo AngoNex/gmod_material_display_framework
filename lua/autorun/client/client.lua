@@ -1,10 +1,5 @@
 AddCSLuaFile()
 
-local CursorModes = {
-    "Sticky",
-    "Default"
-}
-
 MDF_MOUSE_MOVE = 99
 
 local mdf_screen = {}
@@ -18,7 +13,7 @@ function MaterialScreen( name, w, h )
     mt:SetTranslation( Vector( 0, 0, 0 ) )
     mt:SetScale( Vector( 1, 1, 1 ) )
 
-    return setmetatable({
+    meta = setmetatable({
         ScreenResolution = Vector( w, h ),
         MaterialName = material_name,
         RenderTarget = rt,
@@ -37,7 +32,6 @@ function MaterialScreen( name, w, h )
         Cursor = {
             Draw = false,
             Pos = Vector(),
-            Mode = "Sticky",
             Selected = nil,
             Events = {
                 [MOUSE_LEFT] = {},
@@ -48,8 +42,17 @@ function MaterialScreen( name, w, h )
                 [MDF_MOUSE_MOVE] = {}
             }
         },
+        Panels = {},
         Illum = 1
     }, mdf_screen )
+
+    hook.Add( "Think", "Think" .. meta.MaterialName, function()
+        for num, panel in ipairs( meta.Panels ) do
+            panel:Think()
+        end
+    end)
+
+    return meta
 end
 
 do
@@ -68,6 +71,9 @@ do
                 cam.PushModelMatrix( self.ScreenMatrix )
                     render.SetScissorRect( self.ScreenStartPos.x, self.ScreenStartPos.y, self.ScreenRealResolution.x, self.ScreenRealResolution.y, true )
                     isfunction( self:Draw( self.ScreenRealResolution.x, self.ScreenRealResolution.y ) )
+                    for num, panel in ipairs( self.Panels ) do
+                        panel:__Render()
+                    end
                     render.SetScissorRect( 0, 0, 0, 0, false )
                 cam.PopModelMatrix()
             cam.End2D()
@@ -115,8 +121,9 @@ do
 
     function mdf_screen:Remove()
         self:OnRemove()
-        hook.Remove("PlayerButtonDown", "PlayerButtonDown" .. self.MaterialName)
-        hook.Remove("PlayerBindPress", "PlayerBindPress" .. self.MaterialName)
+        hook.Remove( "PlayerButtonDown", "PlayerButtonDown" .. self.MaterialName )
+        hook.Remove( "PlayerBindPress", "PlayerBindPress" .. self.MaterialName )
+        hook.Remove( "Think", "Think" .. self.MaterialName )
     end
 
 end
@@ -227,19 +234,6 @@ do
 
     function mdf_screen:DrawCursorToggle()
         self.Cursor.Draw = not self.Cursor.Draw
-    end
-
-    function mdf_screen:SetCursorMode( mode )
-        for key, value in ipairs( CursorModes ) do
-            if value == mode then
-                self.Cursor.Mode = mode
-                break
-            end
-        end
-    end
-
-    function mdf_screen:GetCursorMode()
-        return self.Cursor.Mode
     end
 
     function mdf_screen:SetCursorPos( input )

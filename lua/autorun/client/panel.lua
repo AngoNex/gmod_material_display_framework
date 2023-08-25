@@ -1,72 +1,102 @@
 AddCSLuaFile()
 
 local colors = {
-    white = Color(255,255,255,255),
-    light_grey = Color(150,150,150,255),
-    grey = Color(100,100,100,255),
-    dark_grey = Color(36,36,36,255),
-    black = Color(0,0,0,255),
-}
-
-local rendertypes = {
-    "box",
-    "roundbox",
-    "circle",
-    "custom"
+    white = Color( 255, 255, 255, 255 ),
+    light_grey = Color( 150, 150, 150, 255 ),
+    grey = Color( 100, 100, 100, 255 ),
+    dark_grey = Color( 36, 36, 36, 255 ),
+    black = Color( 0, 0, 0, 255 )
 }
 
 local mdf_panel = {}
 mdf_panel.__index = mdf_panel
 
-AccessorFunc( mdf_panel, "size", "Size", FORCE_VECTOR )
-AccessorFunc( mdf_panel, "pos", "Pos", FORCE_VECTOR )
-AccessorFunc( mdf_panel, "wide", "Wide", FORCE_NUMBER )
-AccessorFunc( mdf_panel, "height", "Height", FORCE_NUMBER )
 AccessorFunc( mdf_panel, "selectable", "Selectable", FORCE_BOOL )
 AccessorFunc( mdf_panel, "hovered", "Hovered", FORCE_BOOL )
 AccessorFunc( mdf_panel, "text", "Text", FORCE_STRING )
+AccessorFunc( mdf_panel, "update", "Update", FORCE_BOOL )
+AccessorFunc( mdf_panel, "cliping", "Cliping", FORCE_BOOL )
 
-
-function MDF_CreatePanel( screen )
-    assert(screen:IsValid(),"screen InValid")
+function MDF_CreatePanel( screen, parent )
+    assert( screen:IsValid(), "screen InValid" )
     local mt = Matrix()
-    mt:SetTranslation( Vector( 0, 0, 0 ) )
-    mt:SetScale( Vector( 1, 1, 1 ) )
     local meta = setmetatable({
         screen = screen,
-        pos = Vector(),
-        wide = 0,
-        height = 0,
-        theme = {
-            render = {"box"},
-            color1 = colors.black,
-            color2 = colors.dark_grey,
-            color3 = colors.grey,
-            color_text = colors.color_white,
-            color_text_shadow = colors.light_grey
-        },
+        size = Vector( 50, 50 ),
         matrix = mt,
-        parent = nil,
-        childs = {}
-
+        parent = parent,
+        childs = {},
+        events = {},
+        color = colors.white,
+        material = nil
     },mdf_panel)
     meta:Init()
-    meta:PerformLayout()
+
+    if parent then
+        table.insert( parent.childs, meta )
+    else
+        table.insert( screen.Panels, meta )
+    end
+
     return meta
 end
 
 do
 
+    function mdf_panel:IsValid()
+        return true
+    end
+
     function mdf_panel:Init()
-        
+
+    end
+
+    function mdf_panel:Think()
+
     end
 
     function mdf_panel:PerformLayout()
-        self:SetWide(self:GetSize().x)
-        self:SetHeight(self:GetSize().y)
-        for num, child in ipairs(childs) do
-            child:PerformLayout()
+        if self:GetUpdate() then
+            self.screen:RenderUpdate()
         end
+    end
+
+    function mdf_panel:GetSize()
+        return self.size
+    end
+
+    function mdf_panel:SetSize( x, y )
+        self.size = Vector( x, y )
+        self:PerformLayout()
+    end
+
+    function mdf_panel:GetPos()
+        return self.matrix:GetTranslation()
+    end
+
+    function mdf_panel:SetPos( x, y )
+        self.matrix:SetTranslation( Vector( x, y ) )
+        self:PerformLayout()
+    end
+
+    function mdf_panel:GetColor()
+        return self.color
+    end
+
+    function mdf_panel:SetColor( col )
+        if not IsColor( col ) then return end
+        self.color = col
+        self.screen:RenderUpdate()
+    end
+
+    function mdf_panel:GetMaterial()
+        return self.material
+    end
+
+    function mdf_panel:SetMaterial( mat )
+        if type( mat ) ~= "IMaterial" then return end
+        self.material = mat
+        self.screen:RenderUpdate()
     end
 
     function mdf_panel:GetParent()
@@ -77,33 +107,53 @@ do
         self.parent = panel
     end
 
+    function mdf_panel:SetDraw( func )
+        self.Draw = func
+        self.screen:RenderUpdate()
+    end
+
     function mdf_panel:Draw( w, h )
 
     end
 
     function mdf_panel:__RenderChild()
-        for num, child in ipairs(childs) do
+        for num, child in ipairs( self.childs ) do
             child:__Render()
         end
     end
 
     function mdf_panel:__Render()
-        cam.PushModelMatrix( self.matrix )
-            self:Draw(self:GetWide(), self:GetHeight())
-            --тут может быть условие стенсила
-            self:__RenderChild()
+        cam.PushModelMatrix( self.matrix, true )
+            local size = self:GetSize()
+            local w, h = size.x, size.y
+
+            if self:GetCliping() then render.SetScissorRect( 0, 0, w, h, true ) end
+                self:Draw( w, h )
+                self:__RenderChild()
+            render.SetScissorRect( 0, 0, w, h, true )
+
         cam.PopModelMatrix()
     end
 
-    function mdf_panel:Update()
+    function mdf_panel:OnEvent( event, func )
+        self.screen:TouchEvent( event, func )
+        table.insert( self.events, { event = event, func = func } )
     end
 
-
-    function mdf_panel:OnClick()
-
+    function mdf_panel:OnRemove()
     end
-    
 
+    function mdf_panel:Remove()
+        self:OnRemove()
+        for num, tbl in ipairs( self.events ) do
+            table.RemoveByValue( self.screen.Cursor.Events[tbl.event], func )
+        end
+        table.RemoveByValue( self.screen.Panels, self )
+        for num, child in ipairs( self.childs ) do
+            child:Remove()
+        end
+        self = nil
+    end
 
 end
 
