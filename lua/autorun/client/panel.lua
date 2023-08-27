@@ -130,14 +130,19 @@ do
             if self:GetCliping() then render.SetScissorRect( 0, 0, w, h, true ) end
                 self:Draw( w, h )
                 self:__RenderChild()
-            render.SetScissorRect( 0, 0, w, h, true )
+            render.SetScissorRect( 0, 0, 0, 0, false )
 
         cam.PopModelMatrix()
     end
 
     function mdf_panel:OnEvent( event, func )
-        self.screen:TouchEvent( event, func )
-        table.insert( self.events, { event = event, func = func } )
+        local function edit_func( pos )
+            if pos.x >= self:GetPos().x and pos.y >= self:GetPos().y and pos.x <= self:GetPos().x + self:GetSize().x and pos.y <= self:GetPos().y + self:GetSize().y then
+                func( pos )
+            end
+        end
+        self.screen:TouchEvent( event, edit_func )
+        table.insert( self.events, { event = event, func = edit_func } )
     end
 
     function mdf_panel:OnRemove()

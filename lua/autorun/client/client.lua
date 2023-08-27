@@ -70,10 +70,10 @@ do
             cam.Start2D()
                 cam.PushModelMatrix( self.ScreenMatrix )
                     render.SetScissorRect( self.ScreenStartPos.x, self.ScreenStartPos.y, self.ScreenRealResolution.x, self.ScreenRealResolution.y, true )
-                    isfunction( self:Draw( self.ScreenRealResolution.x, self.ScreenRealResolution.y ) )
                     for num, panel in ipairs( self.Panels ) do
                         panel:__Render()
                     end
+                    isfunction( self:Draw( self.ScreenRealResolution.x, self.ScreenRealResolution.y ) )
                     render.SetScissorRect( 0, 0, 0, 0, false )
                 cam.PopModelMatrix()
             cam.End2D()
