@@ -6,7 +6,6 @@ local mdf_screen = {}
 mdf_screen.__index = mdf_screen
 
 function MaterialScreen( name, w, h )
-
     local material_name = "MDF_Screen_" .. name
     local rt = GetRenderTarget( material_name, w, h )
     local mt = Matrix()
