@@ -66,6 +66,19 @@ do
         return self.size
     end
 
+    function mdf_panel:GetParentCliping()
+        local obj = self
+        for i = 1, 5 do
+            if not obj then continue end
+            if obj:GetCliping() then
+                return obj
+            end
+            obj = obj:GetParent()
+        end
+
+        return self
+    end
+
     function mdf_panel:SetSize( x, y )
         self.size = Vector( x, y )
         self:PerformLayout()
@@ -120,6 +133,10 @@ do
 
     function mdf_panel:SetParent( panel )
         self.parent = panel
+        if panel then
+            table.insert( panel.childs, self )
+            table.RemoveByValue( self.screen.Panels, self )
+        end
     end
 
     function mdf_panel:SetDraw( func )
@@ -142,10 +159,10 @@ do
             local size = self:GetSize()
             local w, h = size.x, size.y
 
-            if self:GetCliping() then render.SetScissorRect( 0, 0, w, h, true ) end
+            if self:GetCliping() then render.SetScissorRect( self:GetParentPos().x, self:GetParentPos().y, self:GetParentPos().x + w, self:GetParentPos().y + h, true ) end
                 self:Draw( w, h )
                 self:__RenderChild()
-            render.SetScissorRect( 0, 0, 0, 0, false )
+            if self:GetCliping() then render.SetScissorRect( 0, 0, 0, 0, false ) end
 
         cam.PopModelMatrix()
     end
@@ -153,8 +170,15 @@ do
     function mdf_panel:OnEvent( event, func )
         local function edit_func( pos )
             local ps = self:GetParentPos()
-            if pos.x >= ps.x and pos.y >= ps.y and pos.x <= ps.x + self:GetSize().x and pos.y <= ps.y + self:GetSize().y then
-                func( self, pos - ps )
+            local scpanel = self:GetParentCliping()
+            if scpanel ~= self then
+                if pos.x >= ps.x and pos.y >= ps.y and pos.x <= ps.x + self:GetSize().x and pos.y <= ps.y + self:GetSize().y and pos.x <= scpanel:GetPos().x + scpanel:GetSize().x and pos.y <=  scpanel:GetPos().y + scpanel:GetSize().y then
+                    func( self, pos - ps )
+                end
+            else
+                if pos.x >= ps.x and pos.y >= ps.y and pos.x <= ps.x + self:GetSize().x and pos.y <= ps.y + self:GetSize().y then
+                    func( self, pos - ps )
+                end 
             end
         end
         self.screen:TouchEvent( event, edit_func )
@@ -173,6 +197,7 @@ do
             child:Remove()
         end
         table.RemoveByValue( self.screen.Panels, self )
+        table.RemoveByValue( self.parent.childs, self )
         self = nil
     end
 
