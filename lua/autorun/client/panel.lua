@@ -28,6 +28,7 @@ function MDF_CreatePanel( screen, parent )
         childs = {},
         events = {},
         color = colors.white,
+        textcolor = colors.white,
         material = nil
     },mdf_panel)
     meta:Init()
@@ -74,6 +75,10 @@ do
         return self.matrix:GetTranslation()
     end
 
+    function mdf_panel:GetParentPos()
+        return self:GetParent() and self:GetParent():GetParentPos() + self:GetPos() or self:GetPos()
+    end
+
     function mdf_panel:SetPos( x, y )
         self.matrix:SetTranslation( Vector( x, y ) )
         self:PerformLayout()
@@ -86,6 +91,16 @@ do
     function mdf_panel:SetColor( col )
         if not IsColor( col ) then return end
         self.color = col
+        self.screen:RenderUpdate()
+    end
+
+    function mdf_panel:GetTextColor()
+        return self.textcolor
+    end
+
+    function mdf_panel:SetTextColor( col )
+        if not IsColor( col ) then return end
+        self.textcolor = col
         self.screen:RenderUpdate()
     end
 
@@ -137,8 +152,9 @@ do
 
     function mdf_panel:OnEvent( event, func )
         local function edit_func( pos )
-            if pos.x >= self:GetPos().x and pos.y >= self:GetPos().y and pos.x <= self:GetPos().x + self:GetSize().x and pos.y <= self:GetPos().y + self:GetSize().y then
-                func( pos )
+            local ps = self:GetParentPos()
+            if pos.x >= ps.x and pos.y >= ps.y and pos.x <= ps.x + self:GetSize().x and pos.y <= ps.y + self:GetSize().y then
+                func( self, pos - ps )
             end
         end
         self.screen:TouchEvent( event, edit_func )
@@ -151,12 +167,12 @@ do
     function mdf_panel:Remove()
         self:OnRemove()
         for num, tbl in ipairs( self.events ) do
-            table.RemoveByValue( self.screen.Cursor.Events[tbl.event], func )
+            table.RemoveByValue( self.screen.Cursor.Events[tbl.event], tbl.func )
         end
-        table.RemoveByValue( self.screen.Panels, self )
         for num, child in ipairs( self.childs ) do
             child:Remove()
         end
+        table.RemoveByValue( self.screen.Panels, self )
         self = nil
     end
 
