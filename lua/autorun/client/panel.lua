@@ -178,7 +178,7 @@ do
             else
                 if pos.x >= ps.x and pos.y >= ps.y and pos.x <= ps.x + self:GetSize().x and pos.y <= ps.y + self:GetSize().y then
                     func( self, pos - ps )
-                end 
+                end
             end
         end
         self.screen:TouchEvent( event, edit_func )
