@@ -45,12 +45,6 @@ function MaterialScreen( name, w, h )
         Illum = 1
     }, mdf_screen )
 
-    hook.Add( "Think", "Think" .. meta.MaterialName, function()
-        for num, panel in ipairs( meta.Panels ) do
-            panel:Think()
-        end
-    end)
-
     return meta
 end
 
@@ -72,7 +66,7 @@ do
                     for num, panel in ipairs( self.Panels ) do
                         panel:__Render()
                     end
-                    isfunction( self:Draw( self.ScreenRealResolution.x, self.ScreenRealResolution.y ) )
+                    self:Draw( self.ScreenRealResolution.x, self.ScreenRealResolution.y )
                     render.SetScissorRect( 0, 0, 0, 0, false )
                 cam.PopModelMatrix()
             cam.End2D()
